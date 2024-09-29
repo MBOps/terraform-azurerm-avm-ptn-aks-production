@@ -6,16 +6,21 @@ resource "random_string" "acr_suffix" {
   upper   = false
 }
 
-resource "azurerm_container_registry" "this" {
+module "avm_res_containerregistry_registry" {
+  source  = "Azure/avm-res-containerregistry-registry/azurerm"
+  version = "0.3.1"
+
   location            = var.location
   name                = "cr${random_string.acr_suffix.result}"
   resource_group_name = var.resource_group_name
-  sku                 = "Premium"
-  tags                = var.tags
+
+  sku  = "Premium"
+  tags = var.tags
 }
+
 resource "azurerm_role_assignment" "acr" {
   principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
-  scope                            = azurerm_container_registry.this.id
+  scope                            = module.avm_res_containerregistry_registry.resource_id
   role_definition_name             = "AcrPull"
   skip_service_principal_aad_check = true
 }
